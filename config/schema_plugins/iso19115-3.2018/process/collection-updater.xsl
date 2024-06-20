@@ -4,10 +4,11 @@
                   xmlns:mcc="http://standards.iso.org/iso/19115/-3/mcc/1.0"
                   xmlns:mdb="http://standards.iso.org/iso/19115/-3/mdb/2.0"
                   xmlns:gcx="http://standards.iso.org/iso/19115/-3/gcx/1.0"
+                  xmlns:gex="http://standards.iso.org/iso/19115/-3/gex/1.0"
                   xmlns:mrd="http://standards.iso.org/iso/19115/-3/mrd/1.0"
                   xmlns:gco="http://standards.iso.org/iso/19115/-3/gco/1.0"
                   xmlns:mri="http://standards.iso.org/iso/19115/-3/mri/1.0"
-                  xmlns:srv="http://standards.iso.org/iso/19115/-3/srv/2.1"
+                  xmlns:srv="http://standards.iso.org/iso/19115/-3/srv/2.0"
                   xmlns:xs="http://www.w3.org/2001/XMLSchema"
                   xmlns:geonet="http://www.fao.org/geonetwork"
                   xmlns:util="java:org.fao.geonet.util.XslUtil"
@@ -72,16 +73,23 @@
     <tag name="mri:descriptiveKeywords" context="mri:MD_DataIdentification|srv:SV_ServiceIdentification"
          groupBy="*/mri:thesaurusName/*/cit:title/*/text()"
          merge="mri:keyword"/>
-    <tag name="mri:extent" context="mri:MD_DataIdentification|srv:SV_ServiceIdentification"
+    <!--<tag name="mri:extent" context="mri:MD_DataIdentification|srv:SV_ServiceIdentification"
          groupBy="*/(gex:geographicElement|gex:temporalElement)"
-         merge="gex:geographicElement|gex:temporalElement"/>
+         merge="gex:geographicElement|gex:temporalElement"/>-->
+    <tag name="gex:geographicElement" context="gex:EX_Extent"
+         groupBy="*"
+         merge="."/>
+    <tag name="gex:temporalElement" context="gex:EX_Extent"
+         groupBy="*"
+         merge="."/>
     <!-- TODO: mri:defaultLocale can be in various places. -->
     <tag name="mri:defaultLocale" context="mri:MD_DataIdentification|srv:SV_ServiceIdentification"
          groupBy="mri:defaultLocaleCode/lan:PT_Locale/lan:language/lan:LanguageCode/@codeListValue"
          merge="mri:defaultLocaleCode"/>
     <tag name="mri:graphicOverview" context="mri:MD_DataIdentification|srv:SV_ServiceIdentification"
          groupBy="*/mcc:fileName/*/text()"
-         merge="."/>
+         merge="."
+         limit="1"/>
     <tag name="mri:spatialRepresentationType" context="mri:MD_DataIdentification|srv:SV_ServiceIdentification"
          groupBy="mcc:MD_SpatialRepresentationTypeCode/@codeListValue"
          merge="mri:spatialRepresentationType"/>
@@ -173,10 +181,13 @@
         <xsl:with-param name="elements" select="mri:topicCategory"/>
         <xsl:with-param name="name" select="'mri:topicCategory'"/>
       </xsl:call-template>
-      <xsl:call-template name="copyOrAddElement">
-        <xsl:with-param name="elements" select="mri:extent"/>
-        <xsl:with-param name="name" select="'mri:extent'"/>
-      </xsl:call-template>
+
+      <mri:extent>
+        <gex:EX_Extent>
+          <gex:geographicElement/>
+          <gex:temporalElement/>
+        </gex:EX_Extent>
+      </mri:extent>
 
       <xsl:apply-templates select="mri:additionalDocumentation" mode="expand"/>
       <xsl:apply-templates select="mri:processingLevel" mode="expand"/>
@@ -208,6 +219,41 @@
       <xsl:apply-templates select="srv:*" mode="expand"/>
     </xsl:copy>
   </xsl:template>
+
+
+
+  <xsl:template match="mdb:identificationInfo/*/mri:citation/*" mode="expand">
+    <xsl:copy>
+      <xsl:copy-of select="@*"/>
+      <xsl:apply-templates select="cit:title
+                                  |cit:alternateTitle"
+                           mode="expand"/>
+
+      <xsl:for-each-group select="$existingMembers//mdb:MD_Metadata/mdb:identificationInfo
+            /*/mri:citation/*/cit:date[*/cit:dateType/*/@codeListValue = 'publication']"
+                          group-by="*/cit:date/gco:*">
+        <xsl:sort select="*/cit:date/gco:*" order="descending"/>
+
+        <xsl:if test="position() = 1">
+          <xsl:copy-of select="."/>
+        </xsl:if>
+      </xsl:for-each-group>
+
+      <xsl:apply-templates select="cit:edition
+                                   |cit:editionDate
+                                   |cit:identifier
+                                   |cit:citedResponsibleParty
+                                   |cit:presentationForm
+                                   |cit:series
+                                   |cit:otherCitationDetails
+                                   |cit:collectiveTitle
+                                   |cit:ISBN
+                                   |cit:ISSN
+                                   |cit:onlineResource
+                                   |cit:graphic" mode="expand"/>
+    </xsl:copy>
+  </xsl:template>
+
 
   <xsl:template match="@*|node()" mode="expand">
     <xsl:copy>

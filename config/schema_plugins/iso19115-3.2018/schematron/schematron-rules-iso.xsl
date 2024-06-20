@@ -570,10 +570,8 @@
             </xsl:attribute>
             <xsl:attribute name="id">rule.mri.associatedresource</xsl:attribute>
             <xsl:attribute name="name_en">Associated resource name</xsl:attribute>
-            <xsl:attribute name="name_fr">Nom ou référence à une ressource associée
-    </xsl:attribute>
-            <xsl:attribute name="name">Nom ou référence à une ressource associée
-    </xsl:attribute>
+            <xsl:attribute name="name_fr">Nom ou référence à une ressource associée</xsl:attribute>
+            <xsl:attribute name="name">Nom ou référence à une ressource associée</xsl:attribute>
             <xsl:apply-templates/>
          </svrl:active-pattern>
          <xsl:apply-templates select="/" mode="M62"/>
@@ -803,7 +801,7 @@ Le nom de l'organisation est
       <xsl:variable name="geographicBox"
                     select="gex:geographicElement/                          gex:EX_GeographicBoundingBox[                          normalize-space(gex:westBoundLongitude/gco:Decimal) != '' and                          normalize-space(gex:eastBoundLongitude/gco:Decimal) != '' and                          normalize-space(gex:southBoundLatitude/gco:Decimal) != '' and                          normalize-space(gex:northBoundLatitude/gco:Decimal) != ''                          ]"/>
       <xsl:variable name="geographicPoly"
-                    select="gex:geographicElement/gex:EX_BoundingPolygon[                          normalize-space(gex:polygon) != '']"/>
+                    select="gex:geographicElement/gex:EX_BoundingPolygon[                          count(gex:polygon[normalize-space() != '']) &gt; 0]"/>
       <xsl:variable name="temporal"
                     select="gex:temporalElement/gex:EX_TemporalExtent[                          normalize-space(gex:extent) != '']"/>
       <xsl:variable name="vertical"
@@ -2796,11 +2794,9 @@ Nombre de thèmes :
    </xsl:template>
 
    <!--PATTERN
-        rule.mri.associatedresourceAssociated resource name Nom ou référence à une ressource associée
-    -->
+        rule.mri.associatedresourceAssociated resource name Nom ou référence à une ressource associée-->
 <svrl:text xmlns:svrl="http://purl.oclc.org/dsdl/svrl">Associated resource name</svrl:text>
-   <svrl:text xmlns:svrl="http://purl.oclc.org/dsdl/svrl">Nom ou référence à une ressource associée
-    </svrl:text>
+   <svrl:text xmlns:svrl="http://purl.oclc.org/dsdl/svrl">Nom ou référence à une ressource associée</svrl:text>
 
   <!--RULE
       -->
@@ -2815,6 +2811,10 @@ Nombre de thèmes :
       <xsl:variable name="mdRefRef" select="mri:metadataReference/@uuidref"/>
       <xsl:variable name="hasName" select="$nameTitle != '' or $nameRef != ''"/>
       <xsl:variable name="hasMdRef" select="$mdRefTitle != '' or $mdRefRef != ''"/>
+      <xsl:variable name="association" select="mri:associationType/*/@codeListValue"/>
+      <xsl:variable name="initiative" select="mri:initiativeType/*/@codeListValue"/>
+      <xsl:variable name="hasNoDuplicate"
+                    select="count(../../mri:associatedResource/*[                         mri:metadataReference/@uuidref = $mdRefRef                         and concat(                             mri:associationType/*/@codeListValue,                             mri:initiativeType/*/@codeListValue) =                             concat($association, $initiative)]) = 1"/>
       <xsl:variable name="resourceRef"
                     select="concat($nameTitle, $nameRef,                               $mdRefRef, $mdRefTitle)"/>
 
@@ -2876,6 +2876,37 @@ La
     </svrl:diagnostic-reference>
          </svrl:successful-report>
       </xsl:if>
+
+      <!--ASSERT
+      -->
+<xsl:choose>
+         <xsl:when test="$hasNoDuplicate"/>
+         <xsl:otherwise>
+            <svrl:failed-assert xmlns:svrl="http://purl.oclc.org/dsdl/svrl" ref="#_{geonet:element/@ref}"
+                                test="$hasNoDuplicate">
+               <xsl:attribute name="location">
+                  <xsl:apply-templates select="." mode="schematron-select-full-path"/>
+               </xsl:attribute>
+               <svrl:text/> 
+               <svrl:diagnostic-reference ref="#_{geonet:element/@ref}"
+                                          diagnostic="rule.mri.associatedresourceduplicated-failure-en">
+                  <xsl:attribute name="xml:lang">en</xsl:attribute>
+
+      The resource "<xsl:text/>
+                  <xsl:copy-of select="$resourceRef"/>
+                  <xsl:text/>" is declared multiple time with same association and initiative type.
+    </svrl:diagnostic-reference> 
+               <svrl:diagnostic-reference ref="#_{geonet:element/@ref}"
+                                          diagnostic="rule.mri.associatedresourceduplicated-failure-fr">
+                  <xsl:attribute name="xml:lang">fr</xsl:attribute>
+La
+      ressource "<xsl:text/>
+                  <xsl:copy-of select="$resourceRef"/>
+                  <xsl:text/>" est référencée plusieurs fois avec le même type d'association et d'initiative.
+    </svrl:diagnostic-reference>
+            </svrl:failed-assert>
+         </xsl:otherwise>
+      </xsl:choose>
       <xsl:apply-templates select="*" mode="M62"/>
    </xsl:template>
    <xsl:template match="text()" priority="-1" mode="M62"/>

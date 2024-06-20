@@ -36,7 +36,7 @@
                 xmlns:mrl="http://standards.iso.org/iso/19115/-3/mrl/2.0"
                 xmlns:mrd="http://standards.iso.org/iso/19115/-3/mrd/1.0"
                 xmlns:gml="http://www.opengis.net/gml/3.2"
-                xmlns:srv="http://standards.iso.org/iso/19115/-3/srv/2.1"
+                xmlns:srv="http://standards.iso.org/iso/19115/-3/srv/2.0"
                 xmlns:gcx="http://standards.iso.org/iso/19115/-3/gcx/1.0"
                 xmlns:gex="http://standards.iso.org/iso/19115/-3/gex/1.0"
                 xmlns:mdq="http://standards.iso.org/iso/19157/-2/mdq/1.0"
@@ -104,22 +104,23 @@
                   select="string-join(.//cit:individual/cit:CI_Individual/cit:name/gco:CharacterString, ', ')"/>
     <xsl:variable name="mail"
                   select="string-join(.//cit:CI_Address/cit:electronicMailAddress/gco:CharacterString, ', ')"/>
+
     <xsl:variable name="contactInfo"
-                  select="if ($name != '') then $name else $mail"/>
+                  select="if ($name != '') then $name
+                          else if ($mail != '') then $mail else ''"/>
+    <xsl:variable name="orgContactInfoSuffix"
+                  select="if ($contactInfo != '')
+                          then concat(' (', $contactInfo, ')') else ''"/>
 
     <resourceTitleObject type="object">{
-      "default": "<xsl:value-of select="gn-fn-index:json-escape(
-                                          concat($org, if ($contactInfo != '')
-                                          then concat(' (', $contactInfo, ')')
-                                          else ''))"/>"
+      "default": "<xsl:value-of select="util:escapeForJson(
+                                          concat($org, $orgContactInfoSuffix))"/>"
       <xsl:for-each
         select="cit:party/cit:CI_Organisation/cit:name/lan:PT_FreeText/*/lan:LocalisedCharacterString[. != '']">
         ,"lang<xsl:value-of select="$allLanguages/lang[
                                       @id = current()/@locale/substring(., 2, 2)
-                                    ]/@value"/>": "<xsl:value-of select="gn-fn-index:json-escape(
-                                       if ($contactInfo != '')
-                                       then concat(., ' (', $contactInfo, ')')
-                                       else .)"/>"
+                                    ]/@value"/>": "<xsl:value-of select="util:escapeForJson(
+                                               concat(., $orgContactInfoSuffix))"/>"
       </xsl:for-each>
       }
     </resourceTitleObject>
@@ -127,7 +128,7 @@
     <xsl:copy-of select="gn-fn-index:add-field('Org', $org)"/>
 
     <any type="object">{"common": "<xsl:value-of
-      select="gn-fn-index:json-escape(normalize-space(.))"/>"}
+      select="util:escapeForJson(normalize-space(.))"/>"}
     </any>
 
     <xsl:for-each
@@ -143,11 +144,11 @@
     <xsl:variable name="org" select="normalize-space(cit:name/gco:CharacterString)"/>
 
     <resourceTitleObject type="object">{
-      "default": "<xsl:value-of select="gn-fn-index:json-escape($org)"/>"
+      "default": "<xsl:value-of select="util:escapeForJson($org)"/>"
       <xsl:for-each select="cit:name/lan:PT_FreeText/*/lan:LocalisedCharacterString[. != '']">
         ,"lang<xsl:value-of select="$allLanguages/lang[
                                       @id = current()/@locale/substring(., 2, 2)
-                                    ]/@value"/>": "<xsl:value-of select="gn-fn-index:json-escape(.)"/>"
+                                    ]/@value"/>": "<xsl:value-of select="util:escapeForJson(.)"/>"
       </xsl:for-each>
       }
     </resourceTitleObject>
@@ -167,7 +168,7 @@
     <xsl:variable name="description"
                   select="mrs:referenceSystemIdentifier/*/mcc:description/*/text()"/>
     <resourceTitleObject type="object">{
-      "default": "<xsl:value-of select="gn-fn-index:json-escape(if ($description != '')
+      "default": "<xsl:value-of select="util:escapeForJson(if ($description != '')
                                           then concat($description, ' (', $code, ')')
                                           else $code)"/>"
       }
@@ -190,9 +191,9 @@
 
     <resourceTitleObject type="object">{
       "default": "<xsl:value-of select="if ($specifications != '' )
-                                        then gn-fn-index:json-escape($specifications)
+                                        then util:escapeForJson($specifications)
                                         else if ($measures != '' )
-                                        then gn-fn-index:json-escape($measures)
+                                        then util:escapeForJson($measures)
                                         else normalize-space(.)"/>"
       }
     </resourceTitleObject>
@@ -216,7 +217,7 @@
                   select="string-join(mco:useLimitations/*/text(), ', ')"/>
 
     <resourceTitleObject type="object">{
-      "default": "<xsl:value-of select="gn-fn-index:json-escape(
+      "default": "<xsl:value-of select="util:escapeForJson(
                     if ($references != '')
                     then $references else if ($others != '')
                     then $others
@@ -237,7 +238,7 @@
                   select="concat('S:', .//gex:southBoundLatitude/*/text(), ', W:', .//gex:westBoundLongitude/*/text(), ', N:', .//gex:northBoundLatitude/*/text(), ', E:',.//gex:eastBoundLongitude/*/text())"/>
 
     <resourceTitleObject type="object">{
-      "default": "<xsl:value-of select="gn-fn-index:json-escape(
+      "default": "<xsl:value-of select="util:escapeForJson(
                     if ($desc != '')
                     then $desc
                     else $name)"/>"
@@ -249,7 +250,7 @@
 
   <xsl:template name="subtemplate-common-fields">
     <any type="object">{"common": "<xsl:value-of
-      select="gn-fn-index:json-escape(normalize-space(.))"/>"}
+      select="util:escapeForJson(normalize-space(.))"/>"}
     </any>
   </xsl:template>
 

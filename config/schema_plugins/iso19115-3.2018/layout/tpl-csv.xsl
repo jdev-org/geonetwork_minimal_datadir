@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-                xmlns:srv="http://standards.iso.org/iso/19115/-3/srv/2.1"
+                xmlns:srv="http://standards.iso.org/iso/19115/-3/srv/2.0"
                 xmlns:mds="http://standards.iso.org/iso/19115/-3/mds/2.0"
                 xmlns:mcc="http://standards.iso.org/iso/19115/-3/mcc/1.0"
                 xmlns:mri="http://standards.iso.org/iso/19115/-3/mri/1.0"
@@ -46,6 +46,12 @@
           <xsl:with-param name="langId" select="$langId"/>
         </xsl:apply-templates>
       </abstract>
+
+      <xsl:for-each select="mdb:identificationInfo/*/mri:citation/*/cit:identifier/*/mcc:code/*[. != '']">
+        <resourceIdentifier>
+          <xsl:value-of select="."/>
+        </resourceIdentifier>
+      </xsl:for-each>
 
       <category>
         <xsl:value-of select="mdb:metadataScope/*/mdb:resourceScope/*/@codeListValue"/>

@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xhtml="http://www.w3.org/1999/xhtml"
-                xmlns:iso="http://purl.oclc.org/dsdl/schematron"
+<xsl:stylesheet xmlns:iso="http://purl.oclc.org/dsdl/schematron"
+                xmlns:xhtml="http://www.w3.org/1999/xhtml"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xs="http://www.w3.org/2001/XMLSchema"
                 xmlns:schold="http://www.ascc.net/xml/schematron"
                 xmlns:gml="http://www.opengis.net/gml"
-                xmlns:gmd="http://standards.iso.org/iso/19115/-3/gmd"
-                xmlns:gmx="http://standards.iso.org/iso/19115/-3/gmx"
                 xmlns:geonet="http://www.fao.org/geonetwork"
                 xmlns:skos="http://www.w3.org/2004/02/skos/core#"
                 xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -50,8 +48,24 @@
    <xsl:param xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="lang"/>
    <xsl:param xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="thesaurusDir"/>
    <xsl:param xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="rule"/>
-   <xsl:variable xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="loc"
-                 select="document(concat('../loc/', $lang, '/', $rule, '.xml'))"/>
+   <xsl:variable xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="loc">
+      <xsl:choose>
+         <xsl:when test="document(concat('../loc/', $lang, '/', $rule, '.xml'))">
+            <xsl:copy-of select="document(concat('../loc/', $lang, '/', $rule, '.xml'))"/>
+         </xsl:when>
+         <xsl:otherwise>
+            <xsl:copy-of select="document(concat('../loc/', 'eng', '/', $rule, '.xml'))"/>
+         </xsl:otherwise>
+      </xsl:choose>
+      <xsl:choose>
+         <xsl:when test="count(document(concat('../loc/', $lang, '/', 'schematron-shared.xml')))">
+            <xsl:copy-of select="document(concat('../loc/', $lang, '/', 'schematron-shared.xml'))"/>
+         </xsl:when>
+         <xsl:otherwise>
+            <xsl:copy-of select="document(concat('../loc/', 'eng', '/', 'schematron-shared.xml'))"/>
+         </xsl:otherwise>
+      </xsl:choose>
+   </xsl:variable>
 
    <!--XSD TYPES FOR XSLT2-->
 
@@ -205,8 +219,6 @@
         <xsl:value-of select="$fileDirParameter"/>
          </xsl:comment>
          <svrl:ns-prefix-in-attribute-values uri="http://www.opengis.net/gml" prefix="gml"/>
-         <svrl:ns-prefix-in-attribute-values uri="http://standards.iso.org/iso/19115/-3/gmd" prefix="gmd"/>
-         <svrl:ns-prefix-in-attribute-values uri="http://standards.iso.org/iso/19115/-3/gmx" prefix="gmx"/>
          <svrl:ns-prefix-in-attribute-values uri="http://www.fao.org/geonetwork" prefix="geonet"/>
          <svrl:ns-prefix-in-attribute-values uri="http://www.w3.org/2004/02/skos/core#" prefix="skos"/>
          <svrl:ns-prefix-in-attribute-values uri="http://www.w3.org/1999/xlink" prefix="xlink"/>
@@ -235,7 +247,7 @@
             </xsl:attribute>
             <xsl:apply-templates/>
          </svrl:active-pattern>
-         <xsl:apply-templates select="/" mode="M23"/>
+         <xsl:apply-templates select="/" mode="M21"/>
       </svrl:schematron-output>
    </xsl:template>
 
@@ -251,7 +263,7 @@
   <!--RULE
       -->
 <xsl:template match="//mdb:MD_Metadata|//*[@gco:isoType='mdb:MD_Metadata']" priority="1000"
-                 mode="M23">
+                 mode="M21">
       <svrl:fired-rule xmlns:svrl="http://purl.oclc.org/dsdl/svrl"
                        context="//mdb:MD_Metadata|//*[@gco:isoType='mdb:MD_Metadata']"/>
       <xsl:variable name="title" select="mdb:identificationInfo/*/mri:citation/*/cit:title"/>
@@ -368,7 +380,7 @@
          </svrl:successful-report>
       </xsl:if>
       <xsl:variable name="publisher"
-                    select="(mdb:distributionInfo//mrd:distributorContact)[1]//cit:CI_Organisation/cit:name/gco:CharacterString"/>
+                    select="(mdb:distributionInfo//mrd:distributorContact)[1]//cit:CI_Organisation/cit:name/(gco:CharacterString|gcx:Anchor)"/>
 
       <!--ASSERT
       -->
@@ -481,10 +493,10 @@
             </svrl:text>
          </svrl:successful-report>
       </xsl:if>
-      <xsl:apply-templates select="*|comment()|processing-instruction()" mode="M23"/>
+      <xsl:apply-templates select="*|comment()|processing-instruction()" mode="M21"/>
    </xsl:template>
-   <xsl:template match="text()" priority="-1" mode="M23"/>
-   <xsl:template match="@*|node()" priority="-2" mode="M23">
-      <xsl:apply-templates select="*|comment()|processing-instruction()" mode="M23"/>
+   <xsl:template match="text()" priority="-1" mode="M21"/>
+   <xsl:template match="@*|node()" priority="-2" mode="M21">
+      <xsl:apply-templates select="*|comment()|processing-instruction()" mode="M21"/>
    </xsl:template>
 </xsl:stylesheet>

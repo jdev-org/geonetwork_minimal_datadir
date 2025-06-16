@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xhtml="http://www.w3.org/1999/xhtml"
-                xmlns:iso="http://purl.oclc.org/dsdl/schematron"
+<xsl:stylesheet xmlns:iso="http://purl.oclc.org/dsdl/schematron"
+                xmlns:xhtml="http://www.w3.org/1999/xhtml"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xs="http://www.w3.org/2001/XMLSchema"
                 xmlns:schold="http://www.ascc.net/xml/schematron"
@@ -34,8 +34,24 @@
    <xsl:param xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="lang"/>
    <xsl:param xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="thesaurusDir"/>
    <xsl:param xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="rule"/>
-   <xsl:variable xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="loc"
-                 select="document(concat('../loc/', $lang, '/', $rule, '.xml'))"/>
+   <xsl:variable xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="loc">
+      <xsl:choose>
+         <xsl:when test="document(concat('../loc/', $lang, '/', $rule, '.xml'))">
+            <xsl:copy-of select="document(concat('../loc/', $lang, '/', $rule, '.xml'))"/>
+         </xsl:when>
+         <xsl:otherwise>
+            <xsl:copy-of select="document(concat('../loc/', 'eng', '/', $rule, '.xml'))"/>
+         </xsl:otherwise>
+      </xsl:choose>
+      <xsl:choose>
+         <xsl:when test="count(document(concat('../loc/', $lang, '/', 'schematron-shared.xml')))">
+            <xsl:copy-of select="document(concat('../loc/', $lang, '/', 'schematron-shared.xml'))"/>
+         </xsl:when>
+         <xsl:otherwise>
+            <xsl:copy-of select="document(concat('../loc/', 'eng', '/', 'schematron-shared.xml'))"/>
+         </xsl:otherwise>
+      </xsl:choose>
+   </xsl:variable>
 
    <!--XSD TYPES FOR XSLT2-->
 

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xsl:stylesheet xmlns:xhtml="http://www.w3.org/1999/xhtml"
-                xmlns:iso="http://purl.oclc.org/dsdl/schematron"
+<xsl:stylesheet xmlns:iso="http://purl.oclc.org/dsdl/schematron"
+                xmlns:xhtml="http://www.w3.org/1999/xhtml"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xs="http://www.w3.org/2001/XMLSchema"
                 xmlns:schold="http://www.ascc.net/xml/schematron"
                 xmlns:gmd="http://www.isotc211.org/2005/gmd"
+                xmlns:gmx="http://www.isotc211.org/2005/gmx"
                 xmlns:srv="http://www.isotc211.org/2005/srv"
                 xmlns:gco="http://www.isotc211.org/2005/gco"
                 xmlns:geonet="http://www.fao.org/geonetwork"
@@ -33,8 +34,24 @@
    <xsl:param xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="lang"/>
    <xsl:param xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="thesaurusDir"/>
    <xsl:param xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="rule"/>
-   <xsl:variable xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="loc"
-                 select="document(concat('../loc/', $lang, '/', $rule, '.xml'))"/>
+   <xsl:variable xmlns:svrl="http://purl.oclc.org/dsdl/svrl" name="loc">
+      <xsl:choose>
+         <xsl:when test="document(concat('../loc/', $lang, '/', $rule, '.xml'))">
+            <xsl:copy-of select="document(concat('../loc/', $lang, '/', $rule, '.xml'))"/>
+         </xsl:when>
+         <xsl:otherwise>
+            <xsl:copy-of select="document(concat('../loc/', 'eng', '/', $rule, '.xml'))"/>
+         </xsl:otherwise>
+      </xsl:choose>
+      <xsl:choose>
+         <xsl:when test="count(document(concat('../loc/', $lang, '/', 'schematron-shared.xml')))">
+            <xsl:copy-of select="document(concat('../loc/', $lang, '/', 'schematron-shared.xml'))"/>
+         </xsl:when>
+         <xsl:otherwise>
+            <xsl:copy-of select="document(concat('../loc/', 'eng', '/', 'schematron-shared.xml'))"/>
+         </xsl:otherwise>
+      </xsl:choose>
+   </xsl:variable>
 
    <!--XSD TYPES FOR XSLT2-->
 
@@ -188,6 +205,7 @@
         <xsl:value-of select="$fileDirParameter"/>
          </xsl:comment>
          <svrl:ns-prefix-in-attribute-values uri="http://www.isotc211.org/2005/gmd" prefix="gmd"/>
+         <svrl:ns-prefix-in-attribute-values uri="http://www.isotc211.org/2005/gmx" prefix="gmx"/>
          <svrl:ns-prefix-in-attribute-values uri="http://www.isotc211.org/2005/srv" prefix="srv"/>
          <svrl:ns-prefix-in-attribute-values uri="http://www.isotc211.org/2005/gco" prefix="gco"/>
          <svrl:ns-prefix-in-attribute-values uri="http://www.fao.org/geonetwork" prefix="geonet"/>
@@ -201,7 +219,7 @@
             </xsl:attribute>
             <xsl:apply-templates/>
          </svrl:active-pattern>
-         <xsl:apply-templates select="/" mode="M6"/>
+         <xsl:apply-templates select="/" mode="M7"/>
       </svrl:schematron-output>
    </xsl:template>
 
@@ -217,7 +235,7 @@
   <!--RULE
       -->
 <xsl:template match="//gmd:MD_Metadata|//*[@gco:isoType='gmd:MD_Metadata']" priority="1000"
-                 mode="M6">
+                 mode="M7">
       <svrl:fired-rule xmlns:svrl="http://purl.oclc.org/dsdl/svrl"
                        context="//gmd:MD_Metadata|//*[@gco:isoType='gmd:MD_Metadata']"/>
       <xsl:variable name="title" select="gmd:identificationInfo/*/gmd:citation/*/gmd:title"/>
@@ -333,7 +351,7 @@
          </svrl:successful-report>
       </xsl:if>
       <xsl:variable name="publisher"
-                    select="(gmd:distributionInfo//gmd:distributorContact)[1]/*/gmd:organisationName/gco:CharacterString"/>
+                    select="(gmd:distributionInfo//gmd:distributorContact)[1]/*/gmd:organisationName/(gco:CharacterString|gmx:Anchor)"/>
 
       <!--ASSERT
       -->
@@ -445,10 +463,10 @@
             </svrl:text>
          </svrl:successful-report>
       </xsl:if>
-      <xsl:apply-templates select="*|comment()|processing-instruction()" mode="M6"/>
+      <xsl:apply-templates select="*|comment()|processing-instruction()" mode="M7"/>
    </xsl:template>
-   <xsl:template match="text()" priority="-1" mode="M6"/>
-   <xsl:template match="@*|node()" priority="-2" mode="M6">
-      <xsl:apply-templates select="*|comment()|processing-instruction()" mode="M6"/>
+   <xsl:template match="text()" priority="-1" mode="M7"/>
+   <xsl:template match="@*|node()" priority="-2" mode="M7">
+      <xsl:apply-templates select="*|comment()|processing-instruction()" mode="M7"/>
    </xsl:template>
 </xsl:stylesheet>
